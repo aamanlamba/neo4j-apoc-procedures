@@ -106,6 +106,7 @@ public class Json {
     @Procedure("apoc.convert.toTree2")
     @Description("apoc.convert.toTree2([paths]) creates a stream of nested documents representing the at least one root of these paths")
     // todo optinally provide root node
+    // todo - return nodes and relationships separately in json
     public Stream<MapResult> toTree2(@Name("paths") List<Path> paths) {
         Map<Long, Map<String, Object>> maps = new HashMap<>(paths.size() * 100);
         for (Path path : paths) {
