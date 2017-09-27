@@ -85,6 +85,23 @@ public class ConvertJsonTest {
                     assertEquals(true, actors.get(0).get("acted_in.role").toString().matches("R[12]"));
                 });
     }
+    
+    @Test public void testToTree2() throws Exception {
+        testCall(db, "CREATE p1=(m:Movie {title:'M'})<-[:ACTED_IN {role:'R1'}]-(:Actor {name:'A1'}), " +
+                " p2 = (m)<-[:ACTED_IN  {role:'R2'}]-(:Actor {name:'A2'}) WITH [p1,p2] as paths " +
+                " CALL apoc.convert.toTree2(paths) YIELD value RETURN value",
+                (row) -> {
+                	System.out.println("Tree: " + row.get("value"));
+                    Map root = (Map) row.get("value");
+                    System.out.println("root = " + root);
+                    List<Map> actors = (List<Map>) root.get("acted_in");
+                    System.out.println("actors = " + actors);
+                    assertEquals("Movie", root.get("_type"));
+                    assertEquals("M", root.get("title"));
+                    
+                });
+    }
+    
     @Test public void testToTreeLeafNodes() throws Exception {
         String createStatement = "CREATE\n" +
                 "  (c1:Category {name: 'PC'}),\n" +

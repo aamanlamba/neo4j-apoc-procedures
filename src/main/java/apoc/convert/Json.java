@@ -109,10 +109,15 @@ public class Json {
     // todo - return nodes and relationships separately in json
     public Stream<MapResult> toTree2(@Name("paths") List<Path> paths) {
         Map<Long, Map<String, Object>> maps = new HashMap<>(paths.size() * 100);
+        Map<Long, Map<String, Object>> envelopeMap = new HashMap<>(paths.size() * 100);
+        Map<String, Object> nodesMap = new HashMap<>(100);
+        Map<String, Object> relsMap = new HashMap<>(100);
         for (Path path : paths) {
             Iterator<PropertyContainer> it = path.iterator();
             while (it.hasNext()) {
-                Node n = (Node) it.next();
+                Node n = (Node) it.next();                
+                nodesMap = maps.computeIfAbsent(n.getId(), (id) -> toMap(n));
+                
                 Map<String, Object> nMap = maps.computeIfAbsent(n.getId(), (id) -> toMap(n));
                 if (it.hasNext()) {
                     Relationship r = (Relationship) it.next();
@@ -120,18 +125,32 @@ public class Json {
                     Map<String, Object> mMap = maps.computeIfAbsent(m.getId(), (id) -> toMap(m));
                     String typeName = r.getType().name().toLowerCase();
                     mMap = addRelProperties(mMap, typeName, r);
+                    
+                    // create a separate map for relationships
+                    // plug the node into the 'node map'
+                    // plug the rel into the 'rel map'
+                    nodesMap = maps.computeIfAbsent(m.getId(), (id) -> toMap(m));
+                    Map<String, Object> relMap = maps.computeIfAbsent(r.getId(), (id) -> toMap(r));
+                    relMap = addRelProperties(relMap,typeName,r);
+                    relsMap = maps.computeIfAbsent(r.getId(),(id)->toMap(r));
+                    
                     // todo take direction into account and create collection into outgoing direction ??
                     // parent-[:HAS_CHILD]->(child) vs. (parent)<-[:PARENT_OF]-(child)
                     if (!nMap.containsKey(typeName)) nMap.put(typeName, new ArrayList<>(16));
                     List list = (List) nMap.get(typeName);
                     if (!list.contains(mMap))
                         list.add(mMap); // todo performance, use set instead and convert to map at the end?
+                    
                 }
             }
         }
+        //put relsMap and nodesMap into envelopeMap
+        envelopeMap.put(Long.valueOf(nodesMap.size()),nodesMap);
+        envelopeMap.put(Long.valueOf(relsMap.size()),relsMap);
+
         return paths.stream()
                 .map(Path::startNode)
-                .map(n -> maps.remove(n.getId()))
+                .map(n -> envelopeMap.remove(n.getId()))
                 .filter(m -> m != null)
                 .map(MapResult::new);
     }
@@ -176,6 +195,15 @@ public class Json {
         Map<String, Object> result = new LinkedHashMap<>(props.size() + 2);
         result.put("_id", n.getId());
         result.put("_type", Util.labelString(n));
+        result.putAll(props);
+        return result;
+    }
+    
+    private Map<String, Object> toMap(Relationship n) {
+        Map<String, Object> props = n.getAllProperties();
+        Map<String, Object> result = new LinkedHashMap<>(props.size() + 2);
+        result.put("_id", n.getId());
+        result.put("_type", Util.type(n));
         result.putAll(props);
         return result;
     }
