@@ -140,13 +140,12 @@ public class Json {
                     List list = (List) nMap.get(typeName);
                     if (!list.contains(mMap))
                         list.add(mMap); // todo performance, use set instead and convert to map at the end?
-                    
+                    //put relsMap and nodesMap into envelopeMap
+                    envelopeMap.put(Long.valueOf(nodesMap.size()),nodesMap);
+                    envelopeMap.put(Long.valueOf(relsMap.size()),relsMap);                    
                 }
             }
         }
-        //put relsMap and nodesMap into envelopeMap
-        envelopeMap.put(Long.valueOf(nodesMap.size()),nodesMap);
-        envelopeMap.put(Long.valueOf(relsMap.size()),relsMap);
 
         return paths.stream()
                 .map(Path::startNode)
