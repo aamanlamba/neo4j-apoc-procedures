@@ -103,6 +103,37 @@ public class Json {
                 .map(MapResult::new);
     }
 
+    @Procedure("apoc.convert.toTree2")
+    @Description("apoc.convert.toTree2([paths]) creates a stream of nested documents representing the at least one root of these paths")
+    // todo optinally provide root node
+    public Stream<MapResult> toTree2(@Name("paths") List<Path> paths) {
+        Map<Long, Map<String, Object>> maps = new HashMap<>(paths.size() * 100);
+        for (Path path : paths) {
+            Iterator<PropertyContainer> it = path.iterator();
+            while (it.hasNext()) {
+                Node n = (Node) it.next();
+                Map<String, Object> nMap = maps.computeIfAbsent(n.getId(), (id) -> toMap(n));
+                if (it.hasNext()) {
+                    Relationship r = (Relationship) it.next();
+                    Node m = r.getOtherNode(n);
+                    Map<String, Object> mMap = maps.computeIfAbsent(m.getId(), (id) -> toMap(m));
+                    String typeName = r.getType().name().toLowerCase();
+                    mMap = addRelProperties(mMap, typeName, r);
+                    // todo take direction into account and create collection into outgoing direction ??
+                    // parent-[:HAS_CHILD]->(child) vs. (parent)<-[:PARENT_OF]-(child)
+                    if (!nMap.containsKey(typeName)) nMap.put(typeName, new ArrayList<>(16));
+                    List list = (List) nMap.get(typeName);
+                    if (!list.contains(mMap))
+                        list.add(mMap); // todo performance, use set instead and convert to map at the end?
+                }
+            }
+        }
+        return paths.stream()
+                .map(Path::startNode)
+                .map(n -> maps.remove(n.getId()))
+                .filter(m -> m != null)
+                .map(MapResult::new);
+    }
     @UserFunction("apoc.convert.toSortedJsonMap")
     @Description("apoc.convert.toSortedJsonMap(node|map, ignoreCase:true) - returns a JSON map with keys sorted alphabetically, with optional case sensitivity")
     public String toSortedJsonMap(@Name("value") Object value, @Name(value="ignoreCase", defaultValue = "true") boolean ignoreCase) {

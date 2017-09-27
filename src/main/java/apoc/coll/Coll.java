@@ -404,4 +404,29 @@ public class Coll {
 
         return reversed;
     }
+    
+    @UserFunction
+    @Description("apoc.coll.first(coll)- returns first item from the list, or null on an empty or null list")
+    public Object first(@Name("coll") List<Object> coll) {
+        if (coll == null || coll.isEmpty()) {
+            return null;
+        } else if (coll.size() >= 1) {
+            return coll.get(0);
+        }
+
+        return coll.get(0);
+    }
+    
+    @UserFunction
+    @Description("apoc.coll.last(coll)- returns last item from the list, or null on an empty or null list")
+    public Object last(@Name("coll") List<Object> coll) {
+        if (coll == null || coll.isEmpty()) {
+            return null;
+        } else if (coll.size() >= 1) {
+            return coll.get(coll.size()-1);
+        }
+
+        return coll.get(coll.size()-1);
+    }
+    
 }

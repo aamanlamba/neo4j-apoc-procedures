@@ -480,4 +480,52 @@ public class CollTest {
         testCall(db, "RETURN apoc.coll.reverse([1,2,1,3,2,5,2,3,1,2]) as value",
                 (row) -> assertEquals(asList(2l, 1l, 3l, 2l, 5l, 2l, 3l, 1l, 2l, 1l), row.get("value")));
     }
+    
+    @Test
+    public void testFirst() throws Exception {
+        testCall(db, "RETURN apoc.coll.first([1,2,3,4,5]) as value",
+                (row) -> {
+                    Long result = (Long) row.get("value");
+                    assertTrue(result == 1);
+                });
+    }
+
+    @Test
+    public void testFirstOnNullAndEmptyList() throws Exception {
+        testCall(db, "RETURN apoc.coll.first([]) as value",
+                (row) -> {
+                    Object result = row.get("value");
+                    assertEquals(null, result);
+                });
+
+        testCall(db, "RETURN apoc.coll.first(null) as value",
+                (row) -> {
+                    Object result = row.get("value");
+                    assertEquals(null, result);
+                });
+    }
+    
+    @Test
+    public void testLast() throws Exception {
+        testCall(db, "RETURN apoc.coll.last([1,2,3,4,5]) as value",
+                (row) -> {
+                    Long result = (Long) row.get("value");
+                    assertTrue(result == 5);
+                });
+    }
+
+    @Test
+    public void testLastOnNullAndEmptyList() throws Exception {
+        testCall(db, "RETURN apoc.coll.last([]) as value",
+                (row) -> {
+                    Object result = row.get("value");
+                    assertEquals(null, result);
+                });
+
+        testCall(db, "RETURN apoc.coll.last(null) as value",
+                (row) -> {
+                    Object result = row.get("value");
+                    assertEquals(null, result);
+                });
+    }
 }
